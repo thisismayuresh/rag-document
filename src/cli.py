@@ -1,0 +1,78 @@
+"""Terminal entry point: ingest a PDF (if needed), then chat about it.
+
+This file is the "composition root" - the one place that decides which
+concrete ChatClient/EmbeddingClient implementations to use and wires them
+into the Agent. Every other module only knows about the abstract
+ChatClient/EmbeddingClient interfaces.
+"""
+
+import logging
+import os
+import sys
+
+from agent import Agent
+from embeddings.ollama_embeddings import OllamaEmbeddingClient
+from ingestion import ingest_pdf
+from llm.ollama_client import OllamaChatClient
+from logging_config import configure_logging
+from tools import SEARCH_DOCUMENT_TOOL, make_search_document_tool
+from vector_store import VectorStore
+
+configure_logging()
+logger = logging.getLogger(__name__)
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("Usage: python cli.py <path_to_pdf>")
+        sys.exit(1)
+
+    pdf_path = sys.argv[1]
+    logger.info("Starting CLI document=%s", os.path.basename(pdf_path))
+    if not os.path.exists(pdf_path):
+        print(f"File not found: {pdf_path}")
+        sys.exit(1)
+
+    embedding_client = OllamaEmbeddingClient()
+    vector_store = VectorStore()
+
+    if vector_store.is_empty():
+        chunk_count = ingest_pdf(pdf_path, vector_store, embedding_client)
+        logger.info("Document ingestion completed chunks=%d", chunk_count)
+        print(f"Ingested {chunk_count} chunks from {pdf_path}\n")
+    else:
+        print("Existing collection found in Chroma - skipping ingestion.")
+        print("(Reset the Chroma collection if you want to re-ingest.)\n")
+
+    agent = Agent(
+        llm_client=OllamaChatClient(),
+        tools_schema=[SEARCH_DOCUMENT_TOOL],
+        tool_functions={
+            "search_document": make_search_document_tool(vector_store, embedding_client)
+        },
+    )
+
+    _run_chat_loop(agent, pdf_path)
+
+
+def _run_chat_loop(agent: Agent, pdf_path: str) -> None:
+    print("=" * 40)
+    print("     Local Document AI Agent")
+    print("=" * 40)
+    print(f"Document: {pdf_path}")
+    print("Ask a question or type 'exit'.\n")
+
+    while True:
+        user_input = input("You: ").strip()
+        if user_input.lower() in ("exit", "quit"):
+            logger.info("Chat session ended")
+            break
+        if not user_input:
+            continue
+
+        answer = agent.ask(user_input)
+        print(f"\nAI:\n{answer}\n")
+
+
+if __name__ == "__main__":
+    main()
