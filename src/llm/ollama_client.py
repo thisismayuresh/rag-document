@@ -19,9 +19,15 @@ logger = logging.getLogger(__name__)
 
 
 class OllamaChatClient(ChatClient):
-    def __init__(self, host: str | None = None, model: str | None = None) -> None:
-        self.host = host or settings.ollama_host
-        self.model = model or settings.ollama_chat_model
+    """Chat adapter for an Ollama-compatible chat service."""
+
+    def __init__(
+        self,
+        chat_service_url: str | None = None,
+        chat_model_name: str | None = None,
+    ) -> None:
+        self.chat_service_url = chat_service_url or settings.chat_service_url
+        self.chat_model_name = chat_model_name or settings.chat_model_name
 
     def chat(
         self,
@@ -31,16 +37,16 @@ class OllamaChatClient(ChatClient):
         started_at = time.perf_counter()
         logger.debug(
             "Requesting chat model=%s messages=%d tools=%d",
-            self.model,
+            self.chat_model_name,
             len(messages),
             len(tools or []),
         )
         response = None
         try:
             response = requests.post(
-                f"{self.host}/api/chat",
+                f"{self.chat_service_url}/api/chat",
                 json={
-                    "model": self.model,
+                    "model": self.chat_model_name,
                     "messages": messages,
                     "tools": tools or [],
                     "stream": False,
@@ -52,13 +58,13 @@ class OllamaChatClient(ChatClient):
         except Exception:
             logger.exception(
                 "Chat request failed model=%s status=%d",
-                self.model,
+                self.chat_model_name,
                 getattr(response, "status_code", 0),
             )
             raise
         logger.debug(
             "Chat request completed model=%s tool_calls=%d duration_ms=%.1f",
-            self.model,
+            self.chat_model_name,
             len(message.get("tool_calls", [])),
             (time.perf_counter() - started_at) * 1000,
         )

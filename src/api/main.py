@@ -8,8 +8,8 @@ from pydantic import BaseModel
 
 from agent import Agent
 from config import settings
-from embeddings.ollama_embeddings import OllamaEmbeddingClient
-from llm.ollama_client import OllamaChatClient
+from embeddings.factory import create_embedding_client
+from llm.factory import create_chat_client
 from logging_config import configure_logging
 from tools import Tools
 from vector_store import VectorStore
@@ -31,11 +31,11 @@ class ChatResponse(BaseModel):
 def build_agent() -> Agent:
     """Construct the agent and wire its infrastructure dependencies."""
     vector_store = VectorStore()
-    embedding_client = OllamaEmbeddingClient()
+    embedding_client = create_embedding_client()
     tools = Tools(vector_store, embedding_client)
 
     return Agent(
-        llm_client=OllamaChatClient(),
+        llm_client=create_chat_client(),
         tools_schema=[tools.schema],
         tool_functions={tools.name: tools.search_document},
     )
@@ -43,9 +43,12 @@ def build_agent() -> Agent:
 
 _agent = build_agent()
 logger.info(
-    "API initialized chat_model=%s embedding_model=%s collection=%s",
-    settings.ollama_chat_model,
-    settings.ollama_embed_model,
+    "API initialized chat_provider=%s chat_model=%s embedding_provider=%s "
+    "embedding_model=%s collection=%s",
+    settings.chat_provider,
+    settings.chat_model_name,
+    settings.embedding_provider,
+    settings.embedding_model_name,
     settings.chroma_collection,
 )
 
@@ -78,8 +81,10 @@ def health() -> dict[str, str]:
     """Return service status and the configured model names."""
     return {
         "status": "ok",
-        "chat_model": settings.ollama_chat_model,
-        "embedding_model": settings.ollama_embed_model,
+        "chat_provider": settings.chat_provider,
+        "chat_model": settings.chat_model_name,
+        "embedding_provider": settings.embedding_provider,
+        "embedding_model": settings.embedding_model_name,
     }
 
 

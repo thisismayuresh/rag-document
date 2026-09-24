@@ -20,11 +20,23 @@ def _int_env(key: str, default: int) -> int:
 
 @dataclass(frozen=True)
 class Settings:
-    # --- Ollama: used for both chat and embeddings ---
-    ollama_host: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-    ollama_chat_model: str = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
-    ollama_embed_model: str = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-
+    # --- Model providers ---
+    # Provider names are used by the factories in embeddings/factory.py and
+    # llm/factory.py. Provider-specific adapters stay behind those boundaries.
+    chat_provider: str = os.getenv("CHAT_PROVIDER", "ollama")
+    embedding_provider: str = os.getenv("EMBEDDING_PROVIDER", "ollama")
+    chat_service_url: str = os.getenv(
+        "CHAT_SERVICE_URL", os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    )
+    embedding_service_url: str = os.getenv(
+        "EMBEDDING_SERVICE_URL", os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    )
+    chat_model_name: str = os.getenv(
+        "CHAT_MODEL_NAME", os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+    )
+    embedding_model_name: str = os.getenv(
+        "EMBEDDING_MODEL_NAME", os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+    )
     # --- ChromaDB ---
     chroma_host: str = os.getenv("CHROMA_HOST", "localhost")
     chroma_port: int = _int_env("CHROMA_PORT", 8000)

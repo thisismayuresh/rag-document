@@ -39,10 +39,10 @@ flowchart TB
     API[src/api/main.py\nFastAPI entry point]
     Agent[agent.py\nTool-calling Agent]
     ChatBase[llm/base.py\nChatClient interface]
-    Chat[llm/ollama_client.py\nOllamaChatClient]
+    Chat[llm/factory.py\nConfigured ChatClient]
     Tool[tools.py\nsearch_document tool]
-    EmbedBase[embeddings/base.py\nEmbeddingClient interface]
-    Embed[embeddings/ollama_embeddings.py\nOllamaEmbeddingClient]
+    EmbedBase[embeddings/base.py\nEmbeddingProvider interface]
+    Embed[embeddings/factory.py\nConfigured EmbeddingClient]
     Store[vector_store.py\nVectorStore adapter]
     Ollama[(Ollama service)]
     Chroma[(ChromaDB service)]
@@ -67,14 +67,14 @@ flowchart TB
 `src/main.py` and `src/api/main.py` are composition roots. They create the concrete
 clients, create the vector store, create the `Tools` instance, and register
 its `search_document()` method with `Agent`.
-then hand those dependencies to `Agent`.
 
 The `Agent` does not import Ollama or ChromaDB. It depends on the small
 `ChatClient` interface. The search tool depends on the `EmbeddingClient`
 interface and the `VectorStore` abstraction. This keeps provider-specific
-code at the edges of the application. Replacing Ollama later means adding a
-new implementation of an interface and changing the wiring in one entry
-point, rather than rewriting the agent loop.
+code at the edges of the application. The factories read provider names from
+configuration and return the appropriate interface implementation. Replacing
+Ollama later means adding an adapter and registering it in a factory, rather
+than rewriting the agent loop or `Tools`.
 
 ## Ingestion Architecture
 
@@ -205,7 +205,8 @@ If the Python application also runs inside Docker on the same Compose
 network, use service names instead of `localhost`:
 
 ```dotenv
-OLLAMA_HOST=http://ollama:11434
+CHAT_SERVICE_URL=http://ollama:11434
+EMBEDDING_SERVICE_URL=http://ollama:11434
 CHROMA_HOST=chromadb
 ```
 
@@ -241,9 +242,12 @@ Configuration is loaded once in `config.py` from environment variables and
 
 | Variable                  | Default                  | Meaning                                                  |
 | ------------------------- | ------------------------ | -------------------------------------------------------- |
-| `OLLAMA_HOST`             | `http://localhost:11434` | Ollama base URL.                                         |
-| `OLLAMA_MODEL`            | `llama3.1:8b`            | Chat model.                                              |
-| `OLLAMA_EMBED_MODEL`      | `nomic-embed-text`       | Embedding model.                                         |
+| `CHAT_PROVIDER`           | `ollama`                 | Chat provider selected by the factory.                   |
+| `EMBEDDING_PROVIDER`      | `ollama`                 | Embedding provider selected by the factory.              |
+| `CHAT_SERVICE_URL`        | `http://localhost:11434` | Chat provider base URL.                                  |
+| `EMBEDDING_SERVICE_URL`   | `http://localhost:11434` | Embedding provider base URL.                             |
+| `CHAT_MODEL_NAME`         | `llama3.1:8b`            | Chat model identifier.                                   |
+| `EMBEDDING_MODEL_NAME`    | `nomic-embed-text`       | Embedding model identifier.                              |
 | `CHROMA_HOST`             | `localhost`              | ChromaDB host.                                           |
 | `CHROMA_PORT`             | `8000`                   | ChromaDB port.                                           |
 | `CHROMA_COLLECTION`       | `documents`              | Collection used by the app.                              |
@@ -328,11 +332,13 @@ local-document-agent/
 │   ├── tools.py                # Tools class and tool schemas
 │   ├── vector_store.py         # ChromaDB adapter
 │   ├── embeddings/
-│   │   ├── base.py             # EmbeddingClient interface
-│   │   └── ollama_embeddings.py  # Ollama embedding implementation
+│   │   ├── base.py             # EmbeddingProvider interface
+│   │   ├── factory.py          # Configured embedding provider factory
+│   │   └── client.py           # Configured EmbeddingClient
 │   └── llm/
 │       ├── base.py             # ChatClient interface
-│       └── ollama_client.py    # Ollama chat implementation
+│       ├── factory.py          # Configured chat provider factory
+│       └── ollama_client.py    # Ollama adapter
 ├── docker-compose.yml          # Ollama and ChromaDB services
 ├── requirements.txt            # Python dependencies
 └── .env.example                # Configuration template

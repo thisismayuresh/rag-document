@@ -7,7 +7,7 @@ reasons over whatever text this returns and decides what to say.
 import logging
 
 from data_models import SearchResult
-from embeddings.base import EmbeddingClient
+from embeddings.base import EmbeddingProvider
 from vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class Tools:
     schema = SEARCH_DOCUMENT_SCHEMA
 
     def __init__(
-        self, vector_store: VectorStore, embedding_client: EmbeddingClient
+        self, vector_store: VectorStore, embedding_client: EmbeddingProvider
     ) -> None:
         self._vector_store = vector_store
         self._embedding_client = embedding_client

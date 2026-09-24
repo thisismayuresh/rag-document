@@ -12,6 +12,7 @@ The system is designed to run locally. Ollama provides both the chat model and e
 - Page-aware document processing.
 - Overlapping text chunking for better retrieval across chunk boundaries.
 - Ollama embedding integration for document chunks and user queries.
+- Provider factories selected by `CHAT_PROVIDER` and `EMBEDDING_PROVIDER`.
 - ChromaDB vector-store adapter for persistent local similarity search.
 - Explicit tool-calling agent loop with a configurable maximum number of rounds.
 - `Tools` class with a clear `search_document()` method.
@@ -81,15 +82,16 @@ flowchart TB
 | `src/document_loader.py` | PDF-to-page-text extraction.                                                |
 | `src/chunker.py`         | Page text to overlapping document chunks.                                   |
 | `src/vector_store.py`    | ChromaDB connection, storage, collection checks, and search.                |
-| `src/embeddings/`        | Embedding interface and Ollama implementation.                              |
-| `src/llm/`               | Chat interface and Ollama implementation.                                   |
+| `src/embeddings/`        | EmbeddingProvider interface, factory, and configured client.                |
+| `src/llm/`               | Chat interface, provider factory, and adapters.                             |
 | `src/data_models.py`     | `PageText`, `DocumentChunk`, and `SearchResult` data structures.            |
 | `src/config.py`          | Environment-backed application settings.                                    |
 | `src/logging_config.py`  | Shared logging configuration.                                               |
 
 ## Design Decisions
 
-- **Interfaces at provider boundaries:** the agent depends on `ChatClient`, and document tools depend on `EmbeddingClient`, so the application is not tightly coupled to Ollama.
+- **Interfaces at provider boundaries:** the agent depends on `ChatClient`, and document tools depend on `EmbeddingProvider`, so the application is not tightly coupled to Ollama.
+- **Configuration-driven providers:** provider names, service URLs, and model identifiers are explicit configuration values. Factories choose adapters without exposing provider class names to the application entry points.
 - **One ingestion pipeline:** CLI and future upload flows can reuse `ingest_pdf()` rather than implementing separate ingestion logic.
 - **Named tool class:** `Tools` owns the vector store and embedding client dependencies, making the tool behavior easier to test and extend than a nested closure.
 - **Composition roots:** `main.py` and `api/main.py` decide which concrete implementations to create. Core logic does not construct infrastructure internally.

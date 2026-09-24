@@ -9,14 +9,14 @@ import os
 
 from chunker import chunk_pages
 from document_loader import load_pdf
-from embeddings.base import EmbeddingClient
+from embeddings.base import EmbeddingProvider
 from vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
 
 def ingest_pdf(
-    pdf_path: str, vector_store: VectorStore, embedding_client: EmbeddingClient
+    pdf_path: str, vector_store: VectorStore, embedding_client: EmbeddingProvider
 ) -> int:
     """Load, chunk, embed, and store a PDF. Returns the number of chunks stored."""
     document_name = os.path.basename(pdf_path)

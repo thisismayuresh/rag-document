@@ -7,9 +7,9 @@ import sys
 import requests
 
 from agent import Agent
-from embeddings.ollama_embeddings import OllamaEmbeddingClient
+from embeddings.factory import create_embedding_client
 from ingestion import ingest_pdf
-from llm.ollama_client import OllamaChatClient
+from llm.factory import create_chat_client
 from logging_config import configure_logging
 from tools import Tools
 from vector_store import VectorStore
@@ -30,7 +30,7 @@ def main() -> None:
         print(f"File not found: {pdf_path}")
         sys.exit(1)
 
-    embedding_client = OllamaEmbeddingClient()
+    embedding_client = create_embedding_client()
     vector_store = VectorStore()
 
     if vector_store.is_empty():
@@ -43,7 +43,7 @@ def main() -> None:
 
     tools = Tools(vector_store, embedding_client)
     agent = Agent(
-        llm_client=OllamaChatClient(),
+        llm_client=create_chat_client(),
         tools_schema=[tools.schema],
         tool_functions={tools.name: tools.search_document},
     )

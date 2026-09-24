@@ -1,13 +1,13 @@
-"""Every embedding backend implements this interface (mirrors llm/base.py).
+"""Interface implemented by every embedding backend.
 
-Same reasoning as ChatClient: the rest of the app (tools.py, ingestion.py)
-depends on `EmbeddingClient`, never on Ollama directly.
+The rest of the application depends on `EmbeddingProvider`, never on a
+specific embedding service or model.
 """
 
 from abc import ABC, abstractmethod
 
 
-class EmbeddingClient(ABC):
+class EmbeddingProvider(ABC):
     @abstractmethod
     def embed(self, text: str) -> list[float]:
         raise NotImplementedError
