@@ -18,8 +18,9 @@ def chunk_pages(
     chunk_size: int | None = None,
     overlap: int | None = None,
 ) -> list[DocumentChunk]:
-    chunk_size = chunk_size or settings.chunk_size
-    overlap = overlap or settings.chunk_overlap
+    chunk_size = settings.chunk_size if chunk_size is None else chunk_size
+    overlap = settings.chunk_overlap if overlap is None else overlap
+    _validate_chunk_settings(chunk_size, overlap)
 
     chunks: list[DocumentChunk] = []
     next_chunk_number = 0
@@ -64,3 +65,13 @@ def _split_into_pieces(text: str, chunk_size: int, overlap: int) -> list[str]:
         start += step
 
     return pieces
+
+
+def _validate_chunk_settings(chunk_size: int, overlap: int) -> None:
+    """Reject settings that would create invalid or non-progressing windows."""
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be greater than zero")
+    if overlap < 0:
+        raise ValueError("overlap cannot be negative")
+    if overlap >= chunk_size:
+        raise ValueError("overlap must be smaller than chunk_size")

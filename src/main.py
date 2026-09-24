@@ -1,10 +1,4 @@
-"""Terminal entry point: ingest a PDF (if needed), then chat about it.
-
-This file is the "composition root" - the one place that decides which
-concrete ChatClient/EmbeddingClient implementations to use and wires them
-into the Agent. Every other module only knows about the abstract
-ChatClient/EmbeddingClient interfaces.
-"""
+"""Terminal entry point for ingesting a PDF and chatting about it."""
 
 import logging
 import os
@@ -25,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
+    """Build the application services and start the terminal chat loop."""
     if len(sys.argv) < 2:
-        print("Usage: python cli.py <path_to_pdf>")
+        print("Usage: python main.py <path_to_pdf>")
         sys.exit(1)
 
     pdf_path = sys.argv[1]
@@ -57,6 +52,7 @@ def main() -> None:
 
 
 def _run_chat_loop(agent: Agent, pdf_path: str) -> None:
+    """Read questions until the user exits and print each answer."""
     print("=" * 40)
     print("     Local Document AI Agent")
     print("=" * 40)

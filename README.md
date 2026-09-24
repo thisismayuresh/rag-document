@@ -35,8 +35,8 @@ from retrieved content.
 ```mermaid
 flowchart TB
     User[User]
-    CLI[cli.py\nTerminal entry point]
-    API[api.py\nFastAPI entry point]
+    CLI[src/main.py\nTerminal entry point]
+    API[src/api/main.py\nFastAPI entry point]
     Agent[agent.py\nTool-calling Agent]
     ChatBase[llm/base.py\nChatClient interface]
     Chat[llm/ollama_client.py\nOllamaChatClient]
@@ -64,8 +64,9 @@ flowchart TB
 
 ### The composition roots
 
-`cli.py` and `api.py` are composition roots. They create the concrete
-clients, create the vector store, bind the `search_document` function, and
+`src/main.py` and `src/api/main.py` are composition roots. They create the concrete
+clients, create the vector store, create the `Tools` instance, and register
+its `search_document()` method with `Agent`.
 then hand those dependencies to `Agent`.
 
 The `Agent` does not import Ollama or ChromaDB. It depends on the small
@@ -83,7 +84,7 @@ own module means a future upload endpoint can use exactly the same pipeline.
 
 ```mermaid
 sequenceDiagram
-    participant CLI as cli.py
+    participant CLI as src/main.py
     participant Ingest as ingestion.py
     participant PDF as document_loader.py
     participant Chunker as chunker.py
@@ -286,8 +287,7 @@ cp .env.example .env
 ### Run the CLI
 
 ```bash
-cd src
-../.venv/bin/python cli.py ../documents/sample.pdf
+PYTHONPATH=src .venv/bin/python -m main documents/sample.pdf
 ```
 
 The first run ingests the PDF if the Chroma collection is empty. Later runs
@@ -297,8 +297,7 @@ reuse the existing collection. The chat loop keeps running until you type
 ### Run the HTTP skeleton
 
 ```bash
-cd src
-../.venv/bin/uvicorn api.main:app --reload
+PYTHONPATH=src .venv/bin/uvicorn api.main:app --reload
 ```
 
 Available endpoints:
@@ -319,7 +318,7 @@ local-document-agent/
 │   │   ├── __init__.py         # HTTP API package
 │   │   └── main.py             # FastAPI composition root and HTTP routes
 │   ├── agent.py                # Conversation and tool-calling loop
-│   ├── cli.py                  # Terminal composition root and chat loop
+│   ├── main.py                 # Terminal composition root and chat loop
 │   ├── config.py               # Environment-backed Settings object
 │   ├── data_models.py          # PageText, DocumentChunk, SearchResult
 │   ├── document_loader.py      # PDF -> non-empty PageText records
