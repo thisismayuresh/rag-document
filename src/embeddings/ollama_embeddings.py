@@ -21,19 +21,20 @@ class OllamaEmbeddingClient(EmbeddingClient):
         logger.debug(
             "Requesting embedding model=%s text_chars=%d", self.model, len(text)
         )
-        response = requests.post(
-            f"{self.host}/api/embeddings",
-            json={"model": self.model, "prompt": text},
-            timeout=settings.request_timeout_seconds,
-        )
+        response = None
         try:
+            response = requests.post(
+                f"{self.host}/api/embeddings",
+                json={"model": self.model, "prompt": text},
+                timeout=(settings.request_timeout_seconds or None),
+            )
             response.raise_for_status()
             embedding = response.json()["embedding"]
         except Exception:
             logger.exception(
                 "Embedding request failed model=%s status=%d",
                 self.model,
-                response.status_code,
+                getattr(response, "status_code", 0),
             )
             raise
         logger.debug(

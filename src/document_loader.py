@@ -4,7 +4,7 @@ import logging
 
 import fitz  # PyMuPDF
 
-from models import PageText
+from data_models import PageText
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ get cut in half and lose its meaning in both halves.
 import logging
 
 from config import settings
-from models import DocumentChunk, PageText
+from data_models import DocumentChunk, PageText
 
 logger = logging.getLogger(__name__)
 

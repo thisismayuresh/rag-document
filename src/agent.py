@@ -54,6 +54,10 @@ class Agent:
 
             tool_calls = reply.get("tool_calls")
             if not tool_calls:
+                logger.info(
+                    "Agent decision round=%d action=final_answer",
+                    round_number + 1,
+                )
                 answer = reply.get("content", "")
                 logger.info(
                     "Agent request completed rounds=%d answer_chars=%d",
@@ -62,8 +66,10 @@ class Agent:
                 )
                 return answer
 
-            logger.debug(
-                "Round %d: executing %d tool call(s)", round_number, len(tool_calls)
+            logger.info(
+                "Agent decision round=%d action=tool_call tools=%s",
+                round_number + 1,
+                ",".join(call["function"]["name"] for call in tool_calls),
             )
             for call in tool_calls:
                 self._conversation.append(
@@ -75,6 +81,7 @@ class Agent:
 
     def _execute_tool_call(self, call: dict[str, Any]) -> str:
         name = call["function"]["name"]
+        logger.info("Tool execution started tool=%s", name)
         raw_arguments = call["function"].get("arguments", {})
         arguments = (
             raw_arguments
@@ -87,7 +94,13 @@ class Agent:
             return f"Error: unknown tool '{name}'"
 
         try:
-            return tool_function(**arguments)
+            result = tool_function(**arguments)
+            logger.info(
+                "Tool execution completed tool=%s result_chars=%d",
+                name,
+                len(result),
+            )
+            return result
         except (
             Exception
         ) as exc:  # noqa: BLE001 - report tool failures to the model, don't crash the agent

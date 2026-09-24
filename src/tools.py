@@ -8,7 +8,7 @@ import logging
 from typing import Callable
 
 from embeddings.base import EmbeddingClient
-from models import SearchResult
+from data_models import SearchResult
 from vector_store import VectorStore
 
 logger = logging.getLogger(__name__)

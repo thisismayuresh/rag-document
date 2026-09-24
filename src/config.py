@@ -36,6 +36,7 @@ class Settings:
     top_k_results: int = _int_env("TOP_K_RESULTS", 4)
 
     # --- Networking / agent behaviour ---
+    # Set to 0 to wait indefinitely for Ollama responses.
     request_timeout_seconds: int = _int_env("REQUEST_TIMEOUT_SECONDS", 120)
     max_tool_rounds: int = _int_env("MAX_TOOL_ROUNDS", 4)
 

@@ -10,7 +10,7 @@ import logging
 import chromadb
 
 from config import settings
-from models import DocumentChunk, SearchResult
+from data_models import DocumentChunk, SearchResult
 
 logger = logging.getLogger(__name__)
 

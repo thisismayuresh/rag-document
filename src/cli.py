@@ -10,6 +10,8 @@ import logging
 import os
 import sys
 
+import requests
+
 from agent import Agent
 from embeddings.ollama_embeddings import OllamaEmbeddingClient
 from ingestion import ingest_pdf
@@ -70,7 +72,15 @@ def _run_chat_loop(agent: Agent, pdf_path: str) -> None:
         if not user_input:
             continue
 
-        answer = agent.ask(user_input)
+        try:
+            answer = agent.ask(user_input)
+        except requests.RequestException as exc:
+            logger.error("Ollama request failed: %s", exc)
+            print(
+                "\nAI: Ollama did not respond. Check that Ollama is running "
+                "and try again.\n"
+            )
+            continue
         print(f"\nAI:\n{answer}\n")
 
 

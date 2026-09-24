@@ -35,24 +35,25 @@ class OllamaChatClient(ChatClient):
             len(messages),
             len(tools or []),
         )
-        response = requests.post(
-            f"{self.host}/api/chat",
-            json={
-                "model": self.model,
-                "messages": messages,
-                "tools": tools or [],
-                "stream": False,
-            },
-            timeout=settings.request_timeout_seconds,
-        )
+        response = None
         try:
+            response = requests.post(
+                f"{self.host}/api/chat",
+                json={
+                    "model": self.model,
+                    "messages": messages,
+                    "tools": tools or [],
+                    "stream": False,
+                },
+                timeout=(settings.request_timeout_seconds or None),
+            )
             response.raise_for_status()
             message = response.json()["message"]
         except Exception:
             logger.exception(
                 "Chat request failed model=%s status=%d",
                 self.model,
-                response.status_code,
+                getattr(response, "status_code", 0),
             )
             raise
         logger.debug(
