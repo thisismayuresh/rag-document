@@ -298,7 +298,7 @@ reuse the existing collection. The chat loop keeps running until you type
 
 ```bash
 cd src
-../.venv/bin/uvicorn api:app --reload
+../.venv/bin/uvicorn api.main:app --reload
 ```
 
 Available endpoints:
@@ -315,7 +315,9 @@ Available endpoints:
 local-document-agent/
 ├── documents/                  # Local PDFs used for ingestion
 ├── src/
-│   ├── api.py                  # FastAPI composition root and HTTP routes
+│   ├── api/
+│   │   ├── __init__.py         # HTTP API package
+│   │   └── main.py             # FastAPI composition root and HTTP routes
 │   ├── agent.py                # Conversation and tool-calling loop
 │   ├── cli.py                  # Terminal composition root and chat loop
 │   ├── config.py               # Environment-backed Settings object
@@ -324,7 +326,7 @@ local-document-agent/
 │   ├── chunker.py              # PageText records -> overlapping chunks
 │   ├── ingestion.py            # Shared load -> chunk -> embed -> store flow
 │   ├── logging_config.py       # Shared logging setup
-│   ├── tools.py                # search_document schema and implementation
+│   ├── tools.py                # Tools class and tool schemas
 │   ├── vector_store.py         # ChromaDB adapter
 │   ├── embeddings/
 │   │   ├── base.py             # EmbeddingClient interface

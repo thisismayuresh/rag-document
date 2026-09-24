@@ -5,15 +5,14 @@ reasons over whatever text this returns and decides what to say.
 """
 
 import logging
-from typing import Callable
 
-from embeddings.base import EmbeddingClient
 from data_models import SearchResult
+from embeddings.base import EmbeddingClient
 from vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
-SEARCH_DOCUMENT_TOOL: dict = {
+SEARCH_DOCUMENT_SCHEMA: dict = {
     "type": "function",
     "function": {
         "name": "search_document",
@@ -36,19 +35,23 @@ SEARCH_DOCUMENT_TOOL: dict = {
 }
 
 
-def make_search_document_tool(
-    vector_store: VectorStore, embedding_client: EmbeddingClient
-) -> Callable[[str], str]:
-    """Build the `search_document` function, bound to a specific store/embedder.
+class Tools:
+    """Application tools available to the document question-answering agent."""
 
-    Returned as a closure so the agent can treat every tool the same way -
-    a plain `Callable[[str], str]` - regardless of what it's built from.
-    """
+    name = "search_document"
+    schema = SEARCH_DOCUMENT_SCHEMA
 
-    def search_document(query: str) -> str:
+    def __init__(
+        self, vector_store: VectorStore, embedding_client: EmbeddingClient
+    ) -> None:
+        self._vector_store = vector_store
+        self._embedding_client = embedding_client
+
+    def search_document(self, query: str) -> str:
+        """Search the document for chunks relevant to ``query``."""
         logger.info("Searching document query_chars=%d", len(query))
-        query_embedding = embedding_client.embed(query)
-        results = vector_store.query(query_embedding)
+        query_embedding = self._embedding_client.embed(query)
+        results = self._vector_store.query(query_embedding)
 
         if not results:
             logger.info("Document search returned no results")
@@ -57,11 +60,17 @@ def make_search_document_tool(
         logger.info("Document search returned results=%d", len(results))
         return "\n\n".join(_format_result(result) for result in results)
 
-    return search_document
+    def __call__(self, query: str) -> str:
+        """Allow this tool to be registered directly with the agent."""
+        return self.search_document(query)
 
 
 def _format_result(result: SearchResult) -> str:
     score = (
         f"{result.relevance_score:.2f}" if result.relevance_score is not None else "n/a"
     )
-    return f"[Document: {result.document_name} | Page: {result.page_number} | Score: {score}]\n{result.text}"
+    header = (
+        f"[Document: {result.document_name} | Page: {result.page_number} "
+        f"| Score: {score}]"
+    )
+    return f"{header}\n{result.text}"

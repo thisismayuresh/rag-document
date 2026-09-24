@@ -17,7 +17,7 @@ from embeddings.ollama_embeddings import OllamaEmbeddingClient
 from ingestion import ingest_pdf
 from llm.ollama_client import OllamaChatClient
 from logging_config import configure_logging
-from tools import SEARCH_DOCUMENT_TOOL, make_search_document_tool
+from tools import Tools
 from vector_store import VectorStore
 
 configure_logging()
@@ -46,12 +46,11 @@ def main() -> None:
         print("Existing collection found in Chroma - skipping ingestion.")
         print("(Reset the Chroma collection if you want to re-ingest.)\n")
 
+    tools = Tools(vector_store, embedding_client)
     agent = Agent(
         llm_client=OllamaChatClient(),
-        tools_schema=[SEARCH_DOCUMENT_TOOL],
-        tool_functions={
-            "search_document": make_search_document_tool(vector_store, embedding_client)
-        },
+        tools_schema=[tools.schema],
+        tool_functions={tools.name: tools.search_document},
     )
 
     _run_chat_loop(agent, pdf_path)
