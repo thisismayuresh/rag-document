@@ -39,3 +39,31 @@ services:
 volumes:
   chroma_data:
   ollama_data:
+
+  #To fetch the docker image of oolama and chromadb and to initilize the oolama models
+#   services:
+#   ollama:
+#     image: ollama/ollama:latest
+#     container_name: ollama
+#     ports:
+#       - "11434:11434"
+#     volumes:
+#       - ollama_data:/root/.ollama
+
+#   ollama-init:
+#     image: ollama/ollama:latest
+#     depends_on:
+#       - ollama
+#     entrypoint: ["/bin/sh", "-c"]
+#     command:
+#       - |
+#         until ollama list >/dev/null 2>&1; do
+#           sleep 2
+#         done
+#         ollama pull llama3.1:8b
+#         ollama pull nomic-embed-text
+#     environment:
+#       - OLLAMA_HOST=http://ollama:11434
+
+# volumes:
+#   ollama_data:
