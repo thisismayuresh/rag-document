@@ -1,4 +1,13 @@
-version: "3.9"
+# Infrastructure only: Ollama (chat + embeddings) and ChromaDB (vectors).
+# The Python backend runs on the host via `document-agent-api` and talks to
+# both through localhost (see .env.example).
+#
+#   docker compose up -d
+#
+# Models are pulled automatically on first start. If you change
+# CHAT_MODEL_NAME / EMBEDDING_MODEL_NAME in .env, pull the new model with:
+#
+#   docker exec -it ollama ollama pull <model-name>
 
 services:
   chromadb:
@@ -38,32 +47,5 @@ services:
 
 volumes:
   chroma_data:
-  ollama_data:
+  ollama_data
 
-  #To fetch the docker image of oolama and chromadb and to initilize the oolama models
-#   services:
-#   ollama:
-#     image: ollama/ollama:latest
-#     container_name: ollama
-#     ports:
-#       - "11434:11434"
-#     volumes:
-#       - ollama_data:/root/.ollama
-
-#   ollama-init:
-#     image: ollama/ollama:latest
-#     depends_on:
-#       - ollama
-#     entrypoint: ["/bin/sh", "-c"]
-#     command:
-#       - |
-#         until ollama list >/dev/null 2>&1; do
-#           sleep 2
-#         done
-#         ollama pull llama3.1:8b
-#         ollama pull nomic-embed-text
-#     environment:
-#       - OLLAMA_HOST=http://ollama:11434
-
-# volumes:
-#   ollama_data:
