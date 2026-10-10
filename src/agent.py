@@ -18,14 +18,18 @@ from llm.base import ChatClient
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are a helpful assistant that answers questions about a specific document.
-You have access to a tool called `search_document` that searches the document for relevant text.
+SYSTEM_PROMPT = """You are a document question-answering assistant.
+The user has uploaded one or more documents to this session.
+You have two tools:
+- `list_documents`: lists the documents available in this session.
+- `search_document`: searches those documents and returns matching chunks with document names and page numbers.
 
 Rules:
-- Always use `search_document` before answering a question about the document's content.
-- Only answer using information returned by the tool. Do not use outside knowledge.
-- If the tool does not return relevant information, say you could not find the answer in the document. Do not make anything up.
-- When you answer using document content, mention the source page number(s).
+- Before answering any question about document content, use the tools. Call `list_documents` if you are unsure which documents exist, then `search_document` with a focused query.
+- Answer ONLY from text returned by `search_document`. Never use outside knowledge to answer questions about the documents.
+- If the search results do not contain the answer, say clearly that you could not find it in the uploaded documents. Do not guess, invent, or fill gaps with general knowledge.
+- When you answer from document content, cite the source document name and page number(s) for each claim.
+- For questions unrelated to the documents (greetings, meta questions about the chat), answer briefly and naturally without calling the tools.
 """
 
 
@@ -35,12 +39,13 @@ class Agent:
         llm_client: ChatClient,
         tools_schema: list[dict[str, Any]],
         tool_functions: dict[str, Callable[..., str]],
+        system_prompt: str = SYSTEM_PROMPT,
     ) -> None:
         self._llm = llm_client
         self._tools_schema = tools_schema
         self._tool_functions = tool_functions
         self._conversation: list[dict[str, Any]] = [
-            {"role": "system", "content": SYSTEM_PROMPT}
+            {"role": "system", "content": system_prompt}
         ]
 
     def ask(self, user_message: str) -> str:
