@@ -34,9 +34,11 @@ def main() -> None:
     vector_store = VectorStore()
 
     if vector_store.is_empty():
-        chunk_count = ingest_pdf(pdf_path, vector_store, embedding_client)
-        logger.info("Document ingestion completed chunks=%d", chunk_count)
-        print(f"Ingested {chunk_count} chunks from {pdf_path}\n")
+        result = ingest_pdf(pdf_path, vector_store, embedding_client)
+        logger.info(
+            "Document ingestion completed chunks=%d", result.chunk_count
+        )
+        print(f"Ingested {result.chunk_count} chunks from {pdf_path}\n")
     else:
         print("Existing collection found in Chroma - skipping ingestion.")
         print("(Reset the Chroma collection if you want to re-ingest.)\n")
@@ -44,8 +46,8 @@ def main() -> None:
     tools = Tools(vector_store, embedding_client)
     agent = Agent(
         llm_client=create_chat_client(),
-        tools_schema=[tools.schema],
-        tool_functions={tools.name: tools.search_document},
+        tools_schema=tools.schemas(),
+        tool_functions=tools.registry(),
     )
 
     _run_chat_loop(agent, pdf_path)
