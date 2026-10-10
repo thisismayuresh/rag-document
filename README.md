@@ -36,7 +36,7 @@ open to anyone who can reach the port.
 ```mermaid
 flowchart TB
     Browser[Browser\nReact + TypeScript]
-    API[src/api/main.py\nFastAPI]
+    API[src/document_agent/api/main.py\nFastAPI]
     Registry[sessions.py\nSessionRegistry]
     Session[SessionState\nAgent + VectorStore]
     Agent[agent.py\nTool-calling loop]
@@ -66,7 +66,8 @@ flowchart TB
 
 ### The composition roots
 
-`src/main.py` (CLI) and `src/api/main.py` (HTTP) create the concrete
+`src/document_agent/cli.py` (CLI) and `src/document_agent/api/main.py` (HTTP)
+create the concrete
 clients, the vector store(s), the `Tools` instance, and register the tools
 with an `Agent`. The `Agent` never imports Ollama or ChromaDB - it depends
 on the small `ChatClient` interface; tools depend on `EmbeddingProvider` and
@@ -249,20 +250,32 @@ docker exec -it ollama ollama pull nomic-embed-text
 
 ### 2. Backend
 
+The project is a proper installable package (`pyproject.toml`, src layout).
+One editable install makes everything importable and adds the commands -
+no `PYTHONPATH` required:
+
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # adjust model names if you pulled different ones
+.venv/bin/python -m pip install -e .    # or: make install
+cp .env.example .env                    # adjust model names if needed
 
-PYTHONPATH=src .venv/bin/uvicorn api.main:app --reload
+.venv/bin/document-agent-api --reload   # or: make api-reload
+```
+
+The same API is reachable without the console command:
+
+```bash
+.venv/bin/python -m uvicorn document_agent.api.main:app --reload
 ```
 
 The terminal CLI still works for a single-PDF workflow:
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m main documents/sample.pdf
+.venv/bin/document-agent-cli documents/sample.pdf    # or: make cli PDF=documents/sample.pdf
 ```
+
+Common tasks are also wrapped in a Makefile (`make help` lists them):
+`make api`, `make frontend`, `make typecheck`, and so on.
 
 ### 3. Frontend
 
@@ -319,26 +332,30 @@ local-document-agent/
 │       ├── styles/             # plain CSS
 │       └── types/              # API wire types
 ├── src/
-│   ├── api/
-│   │   ├── main.py             # lifespan (validation), CORS, routers
-│   │   ├── errors.py           # ApiError + handlers -> {"error": {...}}
-│   │   ├── schemas.py          # Pydantic request/response models
-│   │   ├── deps.py             # shared FastAPI dependencies
-│   │   └── routes/             # health, sessions, documents, chat
-│   ├── sessions.py             # in-memory SessionRegistry + SessionState
-│   ├── model_validation.py     # fail-fast startup checks
-│   ├── agent.py                # conversation and tool-calling loop
-│   ├── tools.py                # list_documents + search_document
-│   ├── vector_store.py         # ChromaDB adapter (per-session collections)
-│   ├── ingestion.py            # load -> chunk -> embed -> store
-│   ├── chunker.py / document_loader.py
-│   ├── embeddings/             # EmbeddingProvider interface + Ollama adapter
-│   ├── llm/                    # ChatClient interface + Ollama adapter
-│   ├── config.py               # Settings from .env
-│   └── main.py                 # CLI entry point
+│   └── document_agent/          # installable package (see pyproject.toml)
+│       ├── api/
+│       │   ├── main.py          # lifespan (validation), CORS, routers
+│       │   ├── __main__.py      # document-agent-api console command
+│       │   ├── errors.py        # ApiError + handlers -> {"error": {...}}
+│       │   ├── schemas.py       # Pydantic request/response models
+│       │   ├── deps.py          # shared FastAPI dependencies
+│       │   └── routes/          # health, sessions, documents, chat
+│       ├── sessions.py          # in-memory SessionRegistry + SessionState
+│       ├── model_validation.py  # fail-fast startup checks
+│       ├── agent.py             # conversation and tool-calling loop
+│       ├── tools.py             # list_documents + search_document
+│       ├── vector_store.py      # ChromaDB adapter (per-session collections)
+│       ├── ingestion.py         # load -> chunk -> embed -> store
+│       ├── chunker.py / document_loader.py
+│       ├── embeddings/          # EmbeddingProvider interface + Ollama adapter
+│       ├── llm/                 # ChatClient interface + Ollama adapter
+│       ├── config.py            # Settings from .env
+│       └── cli.py               # document-agent-cli console command
+├── pyproject.toml               # packaging, dependencies, console scripts
+├── Makefile                     # make install / api / cli / frontend / typecheck
 ├── .opencode/skills/react-human-code/  # frontend code-style skill
-├── docker-compose.yml          # Ollama and ChromaDB
-├── requirements.txt
+├── docker-compose.yml           # Ollama and ChromaDB
+├── requirements.txt             # convenience: installs the project (-e .)
 └── .env.example
 ```
 

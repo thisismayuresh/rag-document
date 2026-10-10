@@ -1,4 +1,5 @@
-// Wire-format types matching the FastAPI response models in src/api/schemas.py.
+// Wire-format types matching the FastAPI response models in
+// src/document_agent/api/schemas.py.
 
 export interface HealthInfo {
   status: string;
