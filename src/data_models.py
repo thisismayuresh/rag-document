@@ -29,3 +29,21 @@ class SearchResult:
     page_number: int
     document_name: str
     relevance_score: float | None
+
+
+@dataclass
+class DocumentSummary:
+    """What the vector store knows about one stored document."""
+
+    name: str
+    chunk_count: int
+
+
+@dataclass
+class DocumentInfo:
+    """A document uploaded to a session."""
+
+    name: str
+    chunk_count: int
+    page_count: int
+    size_bytes: int
