@@ -52,5 +52,22 @@ class Settings:
     request_timeout_seconds: int = _int_env("REQUEST_TIMEOUT_SECONDS", 120)
     max_tool_rounds: int = _int_env("MAX_TOOL_ROUNDS", 4)
 
+    # --- Sessions / uploads ---
+    max_documents_per_session: int = _int_env("MAX_DOCUMENTS_PER_SESSION", 5)
+    max_upload_mb: int = _int_env("MAX_UPLOAD_MB", 2)
+    documents_dir: str = os.getenv("DOCUMENTS_DIR", "documents")
+
+    # --- API ---
+    # Comma-separated list of browser origins allowed by CORS. The Vite dev
+    # server is the only intended consumer right now.
+    frontend_origins: str = os.getenv("FRONTEND_ORIGINS", "http://localhost:5173")
+
+    @property
+    def max_upload_bytes(self) -> int:
+        return self.max_upload_mb * 1024 * 1024
+
+    def frontend_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.frontend_origins.split(",") if origin.strip()]
+
 
 settings = Settings()
