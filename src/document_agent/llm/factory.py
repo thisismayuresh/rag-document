@@ -1,7 +1,7 @@
 """Create the configured chat provider."""
 
-from llm.base import ChatClient
-from llm.ollama_client import OllamaChatClient
+from document_agent.llm.base import ChatClient
+from document_agent.llm.ollama_client import OllamaChatClient
 
 
 def create_chat_client() -> ChatClient:

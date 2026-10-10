@@ -12,8 +12,8 @@ from typing import Any
 
 import requests
 
-from config import settings
-from llm.base import ChatClient
+from document_agent.config import settings
+from document_agent.llm.base import ChatClient
 
 logger = logging.getLogger(__name__)
 

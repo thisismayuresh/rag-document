@@ -15,13 +15,13 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from agent import Agent
-from config import settings
-from data_models import DocumentInfo
-from embeddings.base import EmbeddingProvider
-from llm.base import ChatClient
-from tools import Tools
-from vector_store import VectorStore
+from document_agent.agent import Agent
+from document_agent.config import settings
+from document_agent.data_models import DocumentInfo
+from document_agent.embeddings.base import EmbeddingProvider
+from document_agent.llm.base import ChatClient
+from document_agent.tools import Tools
+from document_agent.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 

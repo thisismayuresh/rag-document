@@ -12,14 +12,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.errors import register_exception_handlers
-from api.routes import chat, documents, health, sessions
-from config import settings
-from embeddings.factory import create_embedding_client
-from llm.factory import create_chat_client
-from logging_config import configure_logging
-from model_validation import validate_startup_configuration
-from sessions import SessionRegistry
+from document_agent.api.errors import register_exception_handlers
+from document_agent.api.routes import chat, documents, health, sessions
+from document_agent.config import settings
+from document_agent.embeddings.factory import create_embedding_client
+from document_agent.llm.factory import create_chat_client
+from document_agent.logging_config import configure_logging
+from document_agent.model_validation import validate_startup_configuration
+from document_agent.sessions import SessionRegistry
 
 configure_logging()
 logger = logging.getLogger(__name__)

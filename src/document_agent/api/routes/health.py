@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-from api.schemas import HealthResponse
-from config import settings
+from document_agent.api.schemas import HealthResponse
+from document_agent.config import settings
 
 router = APIRouter()
 

@@ -5,8 +5,8 @@ import time
 
 import requests
 
-from config import settings
-from embeddings.base import EmbeddingProvider
+from document_agent.config import settings
+from document_agent.embeddings.base import EmbeddingProvider
 
 logger = logging.getLogger(__name__)
 

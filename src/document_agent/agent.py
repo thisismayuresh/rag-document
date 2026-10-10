@@ -13,8 +13,8 @@ import json
 import logging
 from typing import Any, Callable
 
-from config import settings
-from llm.base import ChatClient
+from document_agent.config import settings
+from document_agent.llm.base import ChatClient
 
 logger = logging.getLogger(__name__)
 

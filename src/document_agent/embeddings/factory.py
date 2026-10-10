@@ -1,7 +1,7 @@
 """Create the configured embedding provider."""
 
-from embeddings.base import EmbeddingProvider
-from embeddings.client import EmbeddingClient
+from document_agent.embeddings.base import EmbeddingProvider
+from document_agent.embeddings.client import EmbeddingClient
 
 
 def create_embedding_client() -> EmbeddingProvider:

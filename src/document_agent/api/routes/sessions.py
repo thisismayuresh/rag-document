@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, Response
 
-from api.deps import get_registry
-from api.schemas import SessionCreatedModel, SessionModel, session_to_model
-from config import settings
-from sessions import SessionRegistry
+from document_agent.api.deps import get_registry
+from document_agent.api.schemas import SessionCreatedModel, SessionModel, session_to_model
+from document_agent.config import settings
+from document_agent.sessions import SessionRegistry
 
 router = APIRouter()
 

@@ -13,8 +13,8 @@ import logging
 
 import chromadb
 
-from config import settings
-from data_models import DocumentChunk, DocumentSummary, SearchResult
+from document_agent.config import settings
+from document_agent.data_models import DocumentChunk, DocumentSummary, SearchResult
 
 logger = logging.getLogger(__name__)
 

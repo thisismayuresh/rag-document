@@ -6,8 +6,8 @@ get cut in half and lose its meaning in both halves.
 
 import logging
 
-from config import settings
-from data_models import DocumentChunk, PageText
+from document_agent.config import settings
+from document_agent.data_models import DocumentChunk, PageText
 
 logger = logging.getLogger(__name__)
 

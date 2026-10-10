@@ -2,7 +2,7 @@
 
 from fastapi import Request
 
-from sessions import SessionRegistry
+from document_agent.sessions import SessionRegistry
 
 
 def get_registry(request: Request) -> SessionRegistry:

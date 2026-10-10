@@ -14,7 +14,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from requests import RequestException
 
-from sessions import UnknownDocumentError, UnknownSessionError
+from document_agent.sessions import UnknownDocumentError, UnknownSessionError
 
 logger = logging.getLogger(__name__)
 

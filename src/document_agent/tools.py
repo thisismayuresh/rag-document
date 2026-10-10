@@ -11,9 +11,9 @@ Two tools keep the model grounded in what the session actually contains:
 import logging
 from typing import Callable
 
-from data_models import SearchResult
-from embeddings.base import EmbeddingProvider
-from vector_store import VectorStore
+from document_agent.data_models import SearchResult
+from document_agent.embeddings.base import EmbeddingProvider
+from document_agent.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 

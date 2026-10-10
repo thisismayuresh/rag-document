@@ -13,7 +13,7 @@ import logging
 import chromadb
 import requests
 
-from config import settings
+from document_agent.config import settings
 
 logger = logging.getLogger(__name__)
 

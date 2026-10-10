@@ -15,18 +15,18 @@ import requests
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from api.deps import get_registry
-from api.errors import ApiError
-from api.schemas import (
+from document_agent.api.deps import get_registry
+from document_agent.api.errors import ApiError
+from document_agent.api.schemas import (
     DocumentModel,
     DocumentUploadedModel,
     document_to_model,
     session_to_model,
 )
-from config import settings
-from data_models import DocumentInfo
-from ingestion import IngestionResult, ingest_pdf
-from sessions import SessionRegistry, SessionState
+from document_agent.config import settings
+from document_agent.data_models import DocumentInfo
+from document_agent.ingestion import IngestionResult, ingest_pdf
+from document_agent.sessions import SessionRegistry, SessionState
 
 logger = logging.getLogger(__name__)
 

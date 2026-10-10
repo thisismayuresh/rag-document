@@ -6,13 +6,13 @@ import sys
 
 import requests
 
-from agent import Agent
-from embeddings.factory import create_embedding_client
-from ingestion import ingest_pdf
-from llm.factory import create_chat_client
-from logging_config import configure_logging
-from tools import Tools
-from vector_store import VectorStore
+from document_agent.agent import Agent
+from document_agent.embeddings.factory import create_embedding_client
+from document_agent.ingestion import ingest_pdf
+from document_agent.llm.factory import create_chat_client
+from document_agent.logging_config import configure_logging
+from document_agent.tools import Tools
+from document_agent.vector_store import VectorStore
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     """Build the application services and start the terminal chat loop."""
     if len(sys.argv) < 2:
-        print("Usage: python main.py <path_to_pdf>")
+        print("Usage: document-agent-cli <path_to_pdf>")
         sys.exit(1)
 
     pdf_path = sys.argv[1]

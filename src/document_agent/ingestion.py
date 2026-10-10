@@ -8,10 +8,10 @@ import logging
 import os
 from dataclasses import dataclass
 
-from chunker import chunk_pages
-from document_loader import load_pdf
-from embeddings.base import EmbeddingProvider
-from vector_store import VectorStore
+from document_agent.chunker import chunk_pages
+from document_agent.document_loader import load_pdf
+from document_agent.embeddings.base import EmbeddingProvider
+from document_agent.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 

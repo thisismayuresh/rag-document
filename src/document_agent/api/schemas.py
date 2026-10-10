@@ -2,9 +2,9 @@
 
 from pydantic import BaseModel
 
-from config import settings
-from data_models import DocumentInfo
-from sessions import SessionState
+from document_agent.config import settings
+from document_agent.data_models import DocumentInfo
+from document_agent.sessions import SessionState
 
 
 class DocumentModel(BaseModel):

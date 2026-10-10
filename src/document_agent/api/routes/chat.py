@@ -9,10 +9,10 @@ bleeds between sessions.
 import requests
 from fastapi import APIRouter, Depends
 
-from api.deps import get_registry
-from api.errors import ApiError
-from api.schemas import ChatRequest, ChatResponse
-from sessions import SessionRegistry
+from document_agent.api.deps import get_registry
+from document_agent.api.errors import ApiError
+from document_agent.api.schemas import ChatRequest, ChatResponse
+from document_agent.sessions import SessionRegistry
 
 router = APIRouter()
 
