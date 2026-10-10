@@ -239,14 +239,23 @@ leave the browser; the server enforces both again regardless.
 
 ### 1. Services
 
-Ollama and ChromaDB run via Docker Compose; download the models you want
-(any chat + embedding pair you prefer):
+Ollama and ChromaDB run via Docker Compose. The Ollama container pulls the
+models named in your `.env` (`CHAT_MODEL_NAME`, `EMBEDDING_MODEL_NAME`)
+automatically on first start:
 
 ```bash
 docker compose up -d
-docker exec -it ollama ollama pull llama3.1:8b
-docker exec -it ollama ollama pull nomic-embed-text
 ```
+
+To use different models later, change them in `.env` and pull manually:
+
+```bash
+docker exec -it ollama ollama pull <model-name>
+```
+
+Only one stack publishing Ollama on port 11434 can run at a time; if you
+already run Ollama for another project, skip this step and point that
+project's `.env` (or this one's) at the existing service.
 
 ### 2. Backend
 
