@@ -1,56 +1,65 @@
-"""FastAPI entry point for the local document agent."""
+"""FastAPI entry point for the local document agent.
+
+Composition root: wires configuration validation, the session registry,
+CORS, logging, and the route modules. Nothing here talks to Ollama or
+ChromaDB directly - that lives behind sessions, tools, and the clients.
+"""
 
 import logging
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
-from agent import Agent
+from api.errors import register_exception_handlers
+from api.routes import chat, documents, health, sessions
 from config import settings
 from embeddings.factory import create_embedding_client
 from llm.factory import create_chat_client
 from logging_config import configure_logging
-from tools import Tools
-from vector_store import VectorStore
+from model_validation import validate_startup_configuration
+from sessions import SessionRegistry
 
 configure_logging()
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Local Document AI Agent")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Validate configuration, then hand a live registry to the routes."""
+    validate_startup_configuration()
 
-class ChatRequest(BaseModel):
-    message: str
-
-
-class ChatResponse(BaseModel):
-    answer: str
-
-
-def build_agent() -> Agent:
-    """Construct the agent and wire its infrastructure dependencies."""
-    vector_store = VectorStore()
-    embedding_client = create_embedding_client()
-    tools = Tools(vector_store, embedding_client)
-
-    return Agent(
-        llm_client=create_chat_client(),
-        tools_schema=[tools.schema],
-        tool_functions={tools.name: tools.search_document},
+    registry = SessionRegistry(
+        embedding_client=create_embedding_client(),
+        chat_client=create_chat_client(),
     )
+    app.state.sessions = registry
+
+    logger.info(
+        "API ready chat_provider=%s chat_model=%s embedding_provider=%s "
+        "embedding_model=%s max_documents=%d max_upload_mb=%d",
+        settings.chat_provider,
+        settings.chat_model_name,
+        settings.embedding_provider,
+        settings.embedding_model_name,
+        settings.max_documents_per_session,
+        settings.max_upload_mb,
+    )
+    yield
 
 
-_agent = build_agent()
-logger.info(
-    "API initialized chat_provider=%s chat_model=%s embedding_provider=%s "
-    "embedding_model=%s collection=%s",
-    settings.chat_provider,
-    settings.chat_model_name,
-    settings.embedding_provider,
-    settings.embedding_model_name,
-    settings.chroma_collection,
+app = FastAPI(title="Local Document AI Agent", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.frontend_origin_list(),
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+register_exception_handlers(app)
 
 
 @app.middleware("http")
@@ -76,28 +85,7 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    """Return service status and the configured model names."""
-    return {
-        "status": "ok",
-        "chat_provider": settings.chat_provider,
-        "chat_model": settings.chat_model_name,
-        "embedding_provider": settings.embedding_provider,
-        "embedding_model": settings.embedding_model_name,
-    }
-
-
-@app.post("/documents")
-def upload_document() -> dict[str, str]:
-    """Placeholder for the future PDF upload endpoint."""
-    raise NotImplementedError("Document upload is not wired up yet")
-
-
-@app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
-    """Answer a question about the currently indexed document."""
-    logger.info("Processing chat request message_chars=%d", len(request.message))
-    answer = _agent.ask(request.message)
-    logger.info("Chat request completed answer_chars=%d", len(answer))
-    return ChatResponse(answer=answer)
+app.include_router(health.router)
+app.include_router(sessions.router)
+app.include_router(documents.router)
+app.include_router(chat.router)

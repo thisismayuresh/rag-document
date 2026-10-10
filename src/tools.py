@@ -1,10 +1,15 @@
-"""The agent's first tool: search_document.
+"""Tools available to the question-answering agent.
 
-Retrieval only - it must NOT generate answers itself. The LLM is what
-reasons over whatever text this returns and decides what to say.
+Retrieval only - the tools never generate answers themselves. The LLM
+reasons over whatever text these return and decides what to say.
+
+Two tools keep the model grounded in what the session actually contains:
+- ``list_documents`` tells it which documents exist (so it never guesses).
+- ``search_document`` retrieves chunks with document names and page numbers.
 """
 
 import logging
+from typing import Callable
 
 from data_models import SearchResult
 from embeddings.base import EmbeddingProvider
@@ -17,16 +22,19 @@ SEARCH_DOCUMENT_SCHEMA: dict = {
     "function": {
         "name": "search_document",
         "description": (
-            "Search the ingested document for chunks relevant to a query. "
-            "Use this whenever you need information from the document to "
-            "answer the user's question."
+            "Search the user's uploaded documents for chunks relevant to a "
+            "query. Results include the document name and page number. Use "
+            "this whenever you need document content to answer the user."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "The search query, phrased as the information you need to find.",
+                    "description": (
+                        "The search query, phrased as the information you "
+                        "need to find."
+                    ),
                 }
             },
             "required": ["query"],
@@ -34,12 +42,24 @@ SEARCH_DOCUMENT_SCHEMA: dict = {
     },
 }
 
+LIST_DOCUMENTS_SCHEMA: dict = {
+    "type": "function",
+    "function": {
+        "name": "list_documents",
+        "description": (
+            "List the documents available in this session. Call this first "
+            "when you need to know which documents exist before searching."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+}
+
 
 class Tools:
     """Application tools available to the document question-answering agent."""
 
-    name = "search_document"
-    schema = SEARCH_DOCUMENT_SCHEMA
+    SEARCH_TOOL_NAME = "search_document"
+    LIST_TOOL_NAME = "list_documents"
 
     def __init__(
         self, vector_store: VectorStore, embedding_client: EmbeddingProvider
@@ -47,22 +67,44 @@ class Tools:
         self._vector_store = vector_store
         self._embedding_client = embedding_client
 
+    def schemas(self) -> list[dict]:
+        """Tool schemas in the shape the chat API expects."""
+        return [SEARCH_DOCUMENT_SCHEMA, LIST_DOCUMENTS_SCHEMA]
+
+    def registry(self) -> dict[str, Callable[..., str]]:
+        """Map tool names to the callables the agent should invoke."""
+        return {
+            self.SEARCH_TOOL_NAME: self.search_document,
+            self.LIST_TOOL_NAME: self.list_documents,
+        }
+
     def search_document(self, query: str) -> str:
-        """Search the document for chunks relevant to ``query``."""
-        logger.info("Searching document query_chars=%d", len(query))
+        """Search the documents for chunks relevant to ``query``."""
+        logger.info("Searching documents query_chars=%d", len(query))
         query_embedding = self._embedding_client.embed(query)
         results = self._vector_store.query(query_embedding)
 
         if not results:
             logger.info("Document search returned no results")
-            return "No relevant information found in the document."
+            return (
+                "No relevant information found in the uploaded documents "
+                "for that query."
+            )
 
         logger.info("Document search returned results=%d", len(results))
         return "\n\n".join(_format_result(result) for result in results)
 
-    def __call__(self, query: str) -> str:
-        """Allow this tool to be registered directly with the agent."""
-        return self.search_document(query)
+    def list_documents(self) -> str:
+        """Describe the documents currently stored for this session."""
+        summaries = self._vector_store.list_documents()
+        if not summaries:
+            return (
+                "No documents are available in this session. Ask the user "
+                "to upload a PDF first."
+            )
+
+        lines = [f"- {summary.name} ({summary.chunk_count} chunks)" for summary in summaries]
+        return "Available documents:\n" + "\n".join(lines)
 
 
 def _format_result(result: SearchResult) -> str:
