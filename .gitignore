@@ -3,4 +3,8 @@ venv/
 env/
 .env
 __pycache__/
+*.egg-info/
+frontend/node_modules/
+frontend/dist/
+node_modules/
 

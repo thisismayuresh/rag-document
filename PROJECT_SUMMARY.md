@@ -17,8 +17,8 @@ The system is designed to run locally. Ollama provides both the chat model and e
 - Explicit tool-calling agent loop with a configurable maximum number of rounds.
 - `Tools` class with a clear `search_document()` method.
 - Ollama chat integration with configurable timeouts and operational logging.
-- Terminal application entry point in `src/main.py`.
-- FastAPI application in `src/api/main.py`.
+- Terminal application entry point in `src/document_agent/cli.py`.
+- FastAPI application in `src/document_agent/api/main.py`.
 - Shared dependency wiring for the CLI and API.
 - Centralized environment-based configuration.
 - Timestamped logs for ingestion, retrieval, tool calls, model requests, and API requests.
@@ -29,8 +29,8 @@ The system is designed to run locally. Ollama provides both the chat model and e
 ```mermaid
 flowchart TB
     User[User]
-    Main[src/main.py\nTerminal application]
-    API[src/api/main.py\nFastAPI application]
+    Main[src/document_agent/cli.py\nTerminal application]
+    API[src/document_agent/api/main.py\nFastAPI application]
     Agent[Agent\nConversation and tool loop]
     Tools[Tools\nsearch_document method]
     Embeddings[Ollama embedding client]
@@ -74,8 +74,8 @@ flowchart TB
 
 | Component                | Responsibility                                                              |
 | ------------------------ | --------------------------------------------------------------------------- |
-| `src/main.py`            | Terminal entry point, ingestion check, service wiring, and chat loop.       |
-| `src/api/main.py`        | FastAPI application, health route, chat route, and HTTP request logging.    |
+| `src/document_agent/cli.py`            | Terminal entry point, ingestion check, service wiring, and chat loop.       |
+| `src/document_agent/api/main.py`        | FastAPI application, health route, chat route, and HTTP request logging.    |
 | `src/agent.py`           | Conversation state, model/tool decisions, tool execution, and round limits. |
 | `src/tools.py`           | `Tools` class and the `search_document` tool schema and implementation.     |
 | `src/ingestion.py`       | Shared PDF ingestion pipeline.                                              |
@@ -125,8 +125,7 @@ Install the application:
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+.venv/bin/python -m pip install -e .
 cp .env.example .env
 ```
 
@@ -140,13 +139,13 @@ docker exec -it ollama ollama pull nomic-embed-text
 Run the terminal application:
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m main documents/sample.pdf
+.venv/bin/document-agent-cli documents/sample.pdf
 ```
 
 Run the API:
 
 ```bash
-PYTHONPATH=src .venv/bin/uvicorn api.main:app --reload
+.venv/bin/document-agent-api --reload
 ```
 
 ## Engineering Scope

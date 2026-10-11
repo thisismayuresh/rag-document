@@ -1,33 +1,80 @@
-version: "3.9"
+# Infrastructure for this project: Ollama (chat + embeddings) and ChromaDB
+# (vectors). The Python backend runs on the host via `document-agent-api`
+# and talks to both through localhost (see .env.example).
+#
+# Start services:
+#   docker compose up -d
+#
+# Ollama pulls the configured models from .env on first start.
+# To pull another model later:
+#   docker exec -it ollama ollama pull <model-name>
+#
+# Note: Other project stacks publishing Ollama on port 11434 cannot run
+# alongside this one. Run one shared stack and point other projects to it.
+#
+# Memory: Ollama memory-maps model weights, so they count against mem_limit.
+# If Ollama gets OOM-killed, increase your WSL memory allocation and restart
+# Docker Desktop.
 
 services:
   chromadb:
     image: chromadb/chroma:latest
     container_name: chromadb
+    restart: unless-stopped
     ports:
-      - "8000:8000"
+      # Host 8001 (not 8000): the HTTP API binds 8000 on the host.
+      - "8001:8000"
     volumes:
       - chroma_data:/chroma/chroma
-    restart: unless-stopped
+    # The Chroma image ships no shell or curl, so no in-image healthcheck.
 
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+    # Start Ollama and pull the configured models on first start.
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         ollama serve &
         sleep 5
-        ollama pull llama3.1:8b
-        ollama pull nomic-embed-text
+        ollama pull "${CHAT_MODEL_NAME:-llama3.1:8b}"
+        ollama pull "${EMBEDDING_MODEL_NAME:-nomic-embed-text}"
         wait
 
-    restart: unless-stopped
-    # Uncomment to use an NVIDIA GPU:
+    # Memory limit for CPU-based inference.
+    mem_limit: 7g
+
+    ports:
+      - "11434:11434"
+
+    volumes:
+      # Preserve downloaded models across container recreation.
+      - ollama_models:/root/.ollama
+
+    environment:
+      # Keep models loaded in memory.
+      OLLAMA_KEEP_ALIVE: "-1"
+
+      # Allow chat and embedding models to remain loaded.
+      OLLAMA_MAX_LOADED_MODELS: 2
+
+      # Limit parallel inference to reduce memory usage.
+      OLLAMA_NUM_PARALLEL: 1
+
+    healthcheck:
+      # Uses the Ollama CLI instead of curl or wget.
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+    # Optional NVIDIA GPU configuration.
+    # Uncomment this section if NVIDIA GPU support is configured.
+    # Remove mem_limit above if necessary for your GPU configuration.
+    #
     # deploy:
     #   resources:
     #     reservations:
@@ -38,32 +85,4 @@ services:
 
 volumes:
   chroma_data:
-  ollama_data:
-
-  #To fetch the docker image of oolama and chromadb and to initilize the oolama models
-#   services:
-#   ollama:
-#     image: ollama/ollama:latest
-#     container_name: ollama
-#     ports:
-#       - "11434:11434"
-#     volumes:
-#       - ollama_data:/root/.ollama
-
-#   ollama-init:
-#     image: ollama/ollama:latest
-#     depends_on:
-#       - ollama
-#     entrypoint: ["/bin/sh", "-c"]
-#     command:
-#       - |
-#         until ollama list >/dev/null 2>&1; do
-#           sleep 2
-#         done
-#         ollama pull llama3.1:8b
-#         ollama pull nomic-embed-text
-#     environment:
-#       - OLLAMA_HOST=http://ollama:11434
-
-# volumes:
-#   ollama_data:
+  ollama_models:

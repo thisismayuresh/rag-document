@@ -1,0 +1,38 @@
+# Packaging metadata and dependencies for the local document agent.
+#
+# The single source of truth for how to install and run this project:
+#
+#     .venv/bin/python -m pip install -e .
+#
+# That makes the `document_agent` package importable from anywhere (no
+# PYTHONPATH tricks) and installs two console commands:
+#
+#     document-agent-api    - run the HTTP API
+#     document-agent-cli    - terminal chat about one PDF
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-document-agent"
+version = "0.1.0"
+description = "Local RAG application: chat with your PDFs through Ollama and ChromaDB"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pymupdf",
+    "chromadb",
+    "requests",
+    "python-dotenv",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
+]
+
+[project.scripts]
+document-agent-api = "document_agent.api.__main__:run"
+document-agent-cli = "document_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
