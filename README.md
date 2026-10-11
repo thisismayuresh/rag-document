@@ -222,14 +222,15 @@ frontend/src/
 │   ├── useSession.ts     # create/upload/remove/reset + loading + errors
 │   └── useChat.ts        # messages, send, stop (AbortController)
 └── components/           # Sidebar, DocumentDropzone, DocumentList,
-                          # ChatPanel, MessageList, ChatComposer, MoonLoader
+                          # ChatPanel, MessageList, ChatComposer, Spinner,
+                          # WaitingStatus, MessageCitations
 ```
 
 Conventions (also enforced by the project skill
 `.opencode/skills/react-human-code/SKILL.md`): no `React.FC`, early returns
 instead of nested ternaries, every API call wrapped in try/catch, one
 `AbortController` per request (Stop button + unmount cleanup), no request
-timeouts. While the model is thinking the UI shows a moon loader and a Stop
+timeouts. While the model is thinking the UI shows a spinner and a Stop
 button; pressing Stop aborts the HTTP request.
 
 Client-side upload checks (PDF type, size limit) happen before any bytes
@@ -312,7 +313,7 @@ Configuration is loaded once from the environment and `.env`:
 | `EMBEDDING_SERVICE_URL`     | `http://localhost:11434` | Embedding provider base URL. |
 | `CHAT_MODEL_NAME`           | `llama3.1:8b`            | Any chat model pulled into Ollama. |
 | `EMBEDDING_MODEL_NAME`      | `nomic-embed-text`       | Any embedding model pulled into Ollama. |
-| `CHROMA_HOST` / `CHROMA_PORT` | `localhost` / `8000`   | ChromaDB location. |
+| `CHROMA_HOST` / `CHROMA_PORT` | `localhost` / `8001`   | ChromaDB location. |
 | `CHROMA_COLLECTION`         | `documents`              | Default collection (the CLI's; sessions use their own). |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | `800` / `150`         | Character window for chunking. |
 | `TOP_K_RESULTS`             | `4`                      | Chunks retrieved per search. |
