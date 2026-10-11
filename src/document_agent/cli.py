@@ -70,7 +70,7 @@ def _run_chat_loop(agent: Agent, pdf_path: str) -> None:
             continue
 
         try:
-            answer = agent.ask(user_input)
+            response = agent.ask(user_input)
         except requests.RequestException as exc:
             logger.error("Ollama request failed: %s", exc)
             print(
@@ -78,7 +78,11 @@ def _run_chat_loop(agent: Agent, pdf_path: str) -> None:
                 "and try again.\n"
             )
             continue
-        print(f"\nAI:\n{answer}\n")
+        sources = ", ".join(
+            f"{c.document_name} p.{c.page_number}" for c in response.citations
+        )
+        source_line = f"\nSources: {sources}" if sources else ""
+        print(f"\nAI:\n{response.answer}{source_line}\n")
 
 
 if __name__ == "__main__":

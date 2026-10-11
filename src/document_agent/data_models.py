@@ -47,3 +47,19 @@ class DocumentInfo:
     chunk_count: int
     page_count: int
     size_bytes: int
+
+
+@dataclass(frozen=True)
+class Citation:
+    """One (document, page) pair the answer drew from."""
+
+    document_name: str
+    page_number: int
+
+
+@dataclass
+class AgentResponse:
+    """The agent's final answer plus the retrieval citations behind it."""
+
+    answer: str
+    citations: list[Citation]

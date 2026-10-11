@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 
 from document_agent.api.deps import get_registry
 from document_agent.api.errors import ApiError
-from document_agent.api.schemas import ChatRequest, ChatResponse
+from document_agent.api.schemas import ChatRequest, ChatResponse, CitationModel
 from document_agent.sessions import SessionRegistry
 
 router = APIRouter()
@@ -25,7 +25,7 @@ def chat(
     session = registry.get(payload.session_id)
 
     try:
-        answer = session.agent.ask(payload.message)
+        response = session.agent.ask(payload.message)
     except requests.RequestException as exc:
         raise ApiError(
             502,
@@ -34,4 +34,13 @@ def chat(
             "and the model is available, then try again.",
         ) from exc
 
-    return ChatResponse(answer=answer)
+    return ChatResponse(
+        answer=response.answer,
+        citations=[
+            CitationModel(
+                document_name=citation.document_name,
+                page_number=citation.page_number,
+            )
+            for citation in response.citations
+        ],
+    )

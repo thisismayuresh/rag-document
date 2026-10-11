@@ -9,13 +9,17 @@ Two tools keep the model grounded in what the session actually contains:
 """
 
 import logging
+import re
 from typing import Callable
 
-from document_agent.data_models import SearchResult
+from document_agent.data_models import Citation, SearchResult
 from document_agent.embeddings.base import EmbeddingProvider
 from document_agent.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
+
+SEARCH_TOOL_NAME = "search_document"
+LIST_TOOL_NAME = "list_documents"
 
 SEARCH_DOCUMENT_SCHEMA: dict = {
     "type": "function",
@@ -58,8 +62,8 @@ LIST_DOCUMENTS_SCHEMA: dict = {
 class Tools:
     """Application tools available to the document question-answering agent."""
 
-    SEARCH_TOOL_NAME = "search_document"
-    LIST_TOOL_NAME = "list_documents"
+    SEARCH_TOOL_NAME = SEARCH_TOOL_NAME
+    LIST_TOOL_NAME = LIST_TOOL_NAME
 
     def __init__(
         self, vector_store: VectorStore, embedding_client: EmbeddingProvider
@@ -116,3 +120,19 @@ def _format_result(result: SearchResult) -> str:
         f"| Score: {score}]"
     )
     return f"{header}\n{result.text}"
+
+
+# Matches the header `_format_result` writes. The agent uses this to pull
+# the (document, page) pairs back out of a search result so the API can
+# return them as structured citations. Keep the two functions in sync.
+_RESULT_HEADER = re.compile(
+    r"\[Document: (.+?) \| Page: (\d+) \| Score: [^\]]*\]"
+)
+
+
+def parse_citations(search_result_text: str) -> list[Citation]:
+    """Extract the cited (document, page) pairs from a search result string."""
+    return [
+        Citation(document_name=name, page_number=int(page))
+        for name, page in _RESULT_HEADER.findall(search_result_text)
+    ]

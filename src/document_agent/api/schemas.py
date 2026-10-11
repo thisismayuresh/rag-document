@@ -37,8 +37,14 @@ class ChatRequest(BaseModel):
     message: str
 
 
+class CitationModel(BaseModel):
+    document_name: str
+    page_number: int
+
+
 class ChatResponse(BaseModel):
     answer: str
+    citations: list[CitationModel] = []
 
 
 class HealthResponse(BaseModel):

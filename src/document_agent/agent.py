@@ -14,7 +14,9 @@ import logging
 from typing import Any, Callable
 
 from document_agent.config import settings
+from document_agent.data_models import AgentResponse, Citation
 from document_agent.llm.base import ChatClient
+from document_agent.tools import SEARCH_TOOL_NAME, parse_citations
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +50,11 @@ class Agent:
             {"role": "system", "content": system_prompt}
         ]
 
-    def ask(self, user_message: str) -> str:
+    def ask(self, user_message: str) -> AgentResponse:
+        """Answer one user message, collecting citations from document searches."""
         logger.info("Agent request started message_chars=%d", len(user_message))
         self._conversation.append({"role": "user", "content": user_message})
+        citations: list[Citation] = []
 
         for round_number in range(settings.max_tool_rounds):
             logger.debug("Starting agent round=%d", round_number + 1)
@@ -65,11 +69,12 @@ class Agent:
                 )
                 answer = reply.get("content", "")
                 logger.info(
-                    "Agent request completed rounds=%d answer_chars=%d",
+                    "Agent request completed rounds=%d answer_chars=%d citations=%d",
                     round_number + 1,
                     len(answer),
+                    len(citations),
                 )
-                return answer
+                return AgentResponse(answer=answer, citations=_dedupe(citations))
 
             logger.info(
                 "Agent decision round=%d action=tool_call tools=%s",
@@ -77,12 +82,16 @@ class Agent:
                 ",".join(call["function"]["name"] for call in tool_calls),
             )
             for call in tool_calls:
-                self._conversation.append(
-                    {"role": "tool", "content": self._execute_tool_call(call)}
-                )
+                result = self._execute_tool_call(call)
+                if call["function"]["name"] == SEARCH_TOOL_NAME:
+                    citations.extend(parse_citations(result))
+                self._conversation.append({"role": "tool", "content": result})
 
         logger.warning("Agent reached max tool rounds=%d", settings.max_tool_rounds)
-        return "I'm having trouble finishing that - could you rephrase your question?"
+        return AgentResponse(
+            answer="I'm having trouble finishing that - could you rephrase your question?",
+            citations=[],
+        )
 
     def _execute_tool_call(self, call: dict[str, Any]) -> str:
         name = call["function"]["name"]
@@ -111,3 +120,15 @@ class Agent:
         ) as exc:  # noqa: BLE001 - report tool failures to the model, don't crash the agent
             logger.exception("Tool '%s' raised an error", name)
             return f"Error running tool '{name}': {exc}"
+
+
+def _dedupe(citations: list[Citation]) -> list[Citation]:
+    """Drop repeated (document, page) pairs, keeping first-seen order."""
+    seen: set[tuple[str, int]] = set()
+    unique: list[Citation] = []
+    for citation in citations:
+        key = (citation.document_name, citation.page_number)
+        if key not in seen:
+            seen.add(key)
+            unique.append(citation)
+    return unique
