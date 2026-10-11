@@ -2,26 +2,19 @@
 # (vectors). The Python backend runs on the host via `document-agent-api`
 # and talks to both through localhost (see .env.example).
 #
+# Start services:
 #   docker compose up -d
 #
-# The Ollama service is the shared recipe used across projects: models are
-# pulled from .env on first start (CHAT_MODEL_NAME / EMBEDDING_MODEL_NAME
-# here) and inference is tuned to stay warm on a memory-constrained box.
-# If you change a model in .env later, pull it with:
-#
+# Ollama pulls the configured models from .env on first start.
+# To pull another model later:
 #   docker exec -it ollama ollama pull <model-name>
 #
-# Note: other project stacks that also publish Ollama on 11434 cannot run
-# side by side with this one. Run a single shared stack and point every
-# project's .env at it instead (that is what these localhost URLs are for).
+# Note: Other project stacks publishing Ollama on port 11434 cannot run
+# alongside this one. Run one shared stack and point other projects to it.
 #
-# Memory: Ollama mmaps the model, so the weights count against mem_limit.
-# 7g is a measured floor for llama3.1:8b on this machine (4.7 GB weights +
-# ~1 GB KV cache at num_ctx 8192 + ~0.5 GB runtime). At 6g the kernel
-# continuously evicted model pages and a query took minutes instead of
-# seconds. If Ollama gets OOM-killed, raise the VM's memory in
-# %USERPROFILE%\.wslconfig ([wsl2] memory=12GB), then `wsl --shutdown` and
-# restart Docker Desktop.
+# Memory: Ollama memory-maps model weights, so they count against mem_limit.
+# If Ollama gets OOM-killed, increase your WSL memory allocation and restart
+# Docker Desktop.
 
 services:
   chromadb:
@@ -29,7 +22,8 @@ services:
     container_name: chromadb
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      # Host 8001 (not 8000): the HTTP API binds 8000 on the host.
+      - "8001:8000"
     volumes:
       - chroma_data:/chroma/chroma
     # The Chroma image ships no shell or curl, so no in-image healthcheck.
@@ -38,9 +32,8 @@ services:
     image: ollama/ollama:latest
     container_name: ollama
     restart: unless-stopped
-    # Pull the configured models on first start so a fresh volume is usable
-    # without a manual `ollama pull`. The names come from this project's
-    # .env, keeping the container in step with the backend.
+
+    # Start Ollama and pull the configured models on first start.
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -49,29 +42,39 @@ services:
         ollama pull "${CHAT_MODEL_NAME:-llama3.1:8b}"
         ollama pull "${EMBEDDING_MODEL_NAME:-nomic-embed-text}"
         wait
+
+    # Memory limit for CPU-based inference.
     mem_limit: 7g
+
     ports:
       - "11434:11434"
+
     volumes:
-      # Named volume so a re-created container does not re-download several GB.
+      # Preserve downloaded models across container recreation.
       - ollama_models:/root/.ollama
+
     environment:
-      # -1 = never unload. The first large prompt against a cold model spent
-      # minutes faulting weights in from disk versus seconds once resident;
-      # eviction reintroduces that cliff.
+      # Keep models loaded in memory.
       OLLAMA_KEEP_ALIVE: "-1"
-      # Chat + embedding model both resident, so we never pay a swap per query.
+
+      # Allow chat and embedding models to remain loaded.
       OLLAMA_MAX_LOADED_MODELS: 2
-      # CPU-only inference: concurrency buys nothing and costs KV-cache memory.
+
+      # Limit parallel inference to reduce memory usage.
       OLLAMA_NUM_PARALLEL: 1
+
     healthcheck:
-      # The image ships neither curl nor wget, but it does ship the ollama CLI.
+      # Uses the Ollama CLI instead of curl or wget.
       test: ["CMD", "ollama", "list"]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 30s
-    # Uncomment to use an NVIDIA GPU (and drop mem_limit, which is a CPU-VM ceiling):
+
+    # Optional NVIDIA GPU configuration.
+    # Uncomment this section if NVIDIA GPU support is configured.
+    # Remove mem_limit above if necessary for your GPU configuration.
+    #
     # deploy:
     #   resources:
     #     reservations:
@@ -82,4 +85,4 @@ services:
 
 volumes:
   chroma_data:
-  ollama_models
+  ollama_models:

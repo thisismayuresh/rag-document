@@ -39,7 +39,7 @@ class Settings:
     )
     # --- ChromaDB ---
     chroma_host: str = os.getenv("CHROMA_HOST", "localhost")
-    chroma_port: int = _int_env("CHROMA_PORT", 8000)
+    chroma_port: int = _int_env("CHROMA_PORT", 8001)
     chroma_collection: str = os.getenv("CHROMA_COLLECTION", "documents")
 
     # --- Chunking / retrieval ---
