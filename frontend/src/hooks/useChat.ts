@@ -9,11 +9,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError, isAbortError, toErrorMessages } from "../lib/errors";
 import { sendChatMessage } from "../lib/http";
+import type { Citation } from "../types/api";
 
 export interface ChatMessage {
   id: number;
   role: "user" | "assistant";
   content: string;
+  citations: Citation[];
 }
 
 export interface UseChatResult {
@@ -47,7 +49,12 @@ export function useChat(sessionId: string | null): UseChatResult {
 
       const controller = new AbortController();
       abortRef.current = controller;
-      const userMessage = { id: nextIdRef.current++, role: "user" as const, content: text };
+      const userMessage = {
+        id: nextIdRef.current++,
+        role: "user" as const,
+        content: text,
+        citations: [],
+      };
       setMessages((current) => [...current, userMessage]);
       setIsWaiting(true);
       setError(null);
@@ -59,6 +66,7 @@ export function useChat(sessionId: string | null): UseChatResult {
           id: nextIdRef.current++,
           role: "assistant" as const,
           content: response.answer,
+          citations: response.citations ?? [],
         };
         setMessages((current) => [...current, assistantMessage]);
       } catch (caught) {

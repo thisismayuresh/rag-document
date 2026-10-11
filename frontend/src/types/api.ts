@@ -36,8 +36,14 @@ export interface DocumentUploaded {
   session: SessionInfo;
 }
 
+export interface Citation {
+  document_name: string;
+  page_number: number;
+}
+
 export interface ChatResponse {
   answer: string;
+  citations: Citation[];
 }
 
 export interface ErrorPayload {
