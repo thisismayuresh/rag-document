@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import type { ChangeEvent, DragEvent } from "react";
+import type { ChangeEvent, DragEvent, ReactNode } from "react";
 
 import { ErrorBanner } from "./ErrorBanner";
+import { Spinner } from "./Spinner";
 import { validateUpload } from "../utils/files";
 
 interface DocumentDropzoneProps {
@@ -63,6 +64,30 @@ export function DocumentDropzone({
     inputRef.current?.click();
   }
 
+  function dropzoneContent(): ReactNode {
+    if (isUploading) {
+      return (
+        <div className="dropzone-uploading">
+          <Spinner size={20} label="Uploading" />
+          <span>Uploading and indexing... this can take a while for large PDFs.</span>
+        </div>
+      );
+    }
+
+    if (isDisabled) {
+      return <span>{disabledReason}</span>;
+    }
+
+    return (
+      <>
+        <span>Drag a PDF here, or</span>
+        <button type="button" className="pick-link" onClick={openFilePicker}>
+          choose a file
+        </button>
+      </>
+    );
+  }
+
   const dropzoneClass = isOver ? "dropzone is-over" : "dropzone";
   const maxUploadMb = Math.round(maxUploadBytes / (1024 * 1024));
 
@@ -74,16 +99,7 @@ export function DocumentDropzone({
         onDragOver={handleDragOver}
         onDragLeave={() => setIsOver(false)}
       >
-        {isDisabled ? (
-          <span>{disabledReason}</span>
-        ) : (
-          <>
-            <span>Drag a PDF here, or</span>
-            <button type="button" className="pick-link" onClick={openFilePicker}>
-              choose a file
-            </button>
-          </>
-        )}
+        {dropzoneContent()}
         <span className="hint">PDF, up to {maxUploadMb} MB</span>
         <input
           ref={inputRef}
@@ -93,10 +109,6 @@ export function DocumentDropzone({
           disabled={isDisabled}
         />
       </div>
-
-      {isUploading && (
-        <p className="empty-note">Uploading and indexing... this can take a while for large PDFs.</p>
-      )}
 
       {localError && (
         <ErrorBanner message={localError} onDismiss={() => setLocalError(null)} />

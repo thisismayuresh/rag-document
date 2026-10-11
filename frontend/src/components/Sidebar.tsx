@@ -25,6 +25,15 @@ export function Sidebar({
   const maxDocuments = session?.max_documents ?? 0;
   const isFull = session !== null && documentCount >= maxDocuments;
 
+  let disabledReason = "";
+  if (session === null) {
+    disabledReason = "Waiting for a session...";
+  } else if (isUploading) {
+    disabledReason = "Waiting for the current upload to finish...";
+  } else if (isFull) {
+    disabledReason = `A session holds at most ${maxDocuments} documents. Remove one to add another.`;
+  }
+
   return (
     <aside className="sidebar">
       <section>
@@ -32,12 +41,8 @@ export function Sidebar({
         <DocumentDropzone
           maxUploadBytes={maxUploadBytes}
           isUploading={isUploading}
-          isDisabled={isFull || session === null}
-          disabledReason={
-            session === null
-              ? "Waiting for a session..."
-              : `A session holds at most ${maxDocuments} documents. Remove one to add another.`
-          }
+          isDisabled={disabledReason !== ""}
+          disabledReason={disabledReason}
           onFileAccepted={onFileAccepted}
         />
       </section>

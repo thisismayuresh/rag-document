@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChatPanel } from "./components/ChatPanel";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { Sidebar } from "./components/Sidebar";
+import { Spinner } from "./components/Spinner";
 import { useChat } from "./hooks/useChat";
 import { useSession } from "./hooks/useSession";
 import { isAbortError } from "./lib/errors";
@@ -64,19 +65,19 @@ export function App() {
     void sessionApi.resetSession();
   }
 
-  if (sessionApi.isStarting && !sessionApi.session) {
+  if (!sessionApi.session && !sessionApi.error) {
     return (
       <div className="boot-screen">
-        <span className="moon-loader" aria-hidden="true" />
+        <Spinner size={32} label="Starting a session" />
         <span>Starting a session...</span>
       </div>
     );
   }
 
-  if (!sessionApi.session && sessionApi.error) {
+  if (!sessionApi.session) {
     return (
       <div className="boot-screen">
-        <ErrorBanner message={sessionApi.error} onDismiss={sessionApi.clearError} />
+        <ErrorBanner message={sessionApi.error ?? "Failed to start a session."} onDismiss={sessionApi.clearError} />
         <button type="button" className="primary-button" onClick={handleNewSession}>
           Try again
         </button>

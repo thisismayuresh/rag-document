@@ -2,7 +2,8 @@ import type { ChatMessage } from "../hooks/useChat";
 import { ChatComposer } from "./ChatComposer";
 import { ErrorBanner } from "./ErrorBanner";
 import { MessageList } from "./MessageList";
-import { MoonLoader } from "./MoonLoader";
+import { Spinner } from "./Spinner";
+import { WaitingStatus } from "./WaitingStatus";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -42,8 +43,11 @@ export function ChatPanel({
 
       {isWaiting && (
         <div className="waiting-row">
-          <MoonLoader />
-          <span>Waiting for the model... press Stop to cancel.</span>
+          <Spinner size={20} label="Waiting for response" />
+          <WaitingStatus />
+          <button type="button" className="ghost-button" onClick={onStop}>
+            Stop
+          </button>
         </div>
       )}
 
