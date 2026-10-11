@@ -6,7 +6,7 @@ from document_agent.embeddings.client import EmbeddingClient
 
 def create_embedding_client() -> EmbeddingProvider:
     """Return the embedding client selected by application configuration."""
-    from config import settings
+    from document_agent.config import settings
 
     if settings.embedding_provider == "ollama":
         return EmbeddingClient(

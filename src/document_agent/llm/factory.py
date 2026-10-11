@@ -6,7 +6,7 @@ from document_agent.llm.ollama_client import OllamaChatClient
 
 def create_chat_client() -> ChatClient:
     """Return the chat client selected by application configuration."""
-    from config import settings
+    from document_agent.config import settings
 
     if settings.chat_provider == "ollama":
         return OllamaChatClient(
